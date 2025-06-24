@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Travel Spot Finder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <style>
+    body, html { height: 100%; margin: 0; }
+    .search-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f1f3f4; }
+    .search-box { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; gap: 10px; }
+    .search-box input { width: 300px; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; }
+    .search-box button { padding: 12px 20px; font-size: 16px; background: #4285F4; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .search-box button:hover { background: #357ae8; }
+  </style>
+</head>
+<body>
+  <div class="search-container">
+    <form class="search-box" action="/results" method="get">
+      <input id="location-input" name="location" type="text" placeholder="Enter a city or address…" required>
+      <input id="keyword-input" name="keyword" type="text" placeholder="e.g. tourist attractions" required>
+      <button type="submit">Search</button>
+    </form>
+  </div>
+
+  <script>
+    function initAutocomplete() {
+      new google.maps.places.Autocomplete(document.getElementById('location-input'));
+    }
+  </script>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key={{ browser_key }}&libraries=places&language=en&callback=initAutocomplete">
+  </script>
+</body>
+</html>

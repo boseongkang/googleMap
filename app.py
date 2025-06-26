@@ -1,5 +1,5 @@
 import json
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import requests
 from dotenv import load_dotenv
 import os
@@ -66,4 +66,3 @@ def map_search():
 
 if __name__ == '__main__':
     app.run(debug=True)
-

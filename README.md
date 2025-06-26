@@ -21,6 +21,6 @@ add img using Google Places API and show in popup
 <br>
 if user clicks anywhere on the map, pop up closes
 <br>
-need to do:
+**need to do**:
 popup box fix
 if user drags the map, result changes as the map changes

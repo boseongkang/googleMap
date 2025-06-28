@@ -1,4 +1,6 @@
 # googleMap
+git clone repository -> 'pip install flask' -> 'pip install requests' -> 'pip install dotenv' -> 'python app.py runserver'
+
 ## Jun 24 2025
 <br>
 show search results on map with markers and number list

@@ -4,8 +4,9 @@ import requests
 from dotenv import load_dotenv
 import os
 
+
 load_dotenv()
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder='static')
 
 GOOGLE_BROWSER_KEY = os.getenv("GOOGLE_BROWSER_KEY")
 GOOGLE_SERVER_KEY = os.getenv("GOOGLE_SERVER_KEY")
@@ -49,7 +50,6 @@ def results():
                            browser_key=GOOGLE_BROWSER_KEY
                            )
 
-
 @app.route('/map_search', methods=['POST'])
 def map_search():
     data = request.json
@@ -70,4 +70,5 @@ def map_search():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)

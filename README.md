@@ -41,3 +41,8 @@ map drag feature added
 Searching "San Francisco" + "bridge" keyword, shows the correct Golden Gate Bridge photo.
 But with "San Francisco" + "tourist attractions" keyword, the Golden Gate Bridge result shows a wrong photo (Taj Mahal).
 This is due to the Google Places API photo data
+<br>
+<img width="1770" alt="Image" src="https://github.com/user-attachments/assets/1a650036-fde0-41cf-8997-f573bb34d67a" />
+
+
+<img width="1783" alt="Image" src="https://github.com/user-attachments/assets/a9c80323-cc03-4073-ab64-c8066c57733b" />

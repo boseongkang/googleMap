@@ -1,6 +1,6 @@
 # googleMap
-<hr>
 **need to fix**: google cloud server uploaded but page not found error - Jun 28 2025 
+<br>
 git clone repository -> 'pip install flask' -> 'pip install requests' -> 'pip install dotenv' -> 'python app.py runserver'
 
 ## Jun 24 2025

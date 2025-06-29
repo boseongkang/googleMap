@@ -26,3 +26,18 @@ if user clicks anywhere on the map, pop up closes
 **need to do**:
 popup box fix
 if user drags the map, result changes as the map changes
+
+
+## Jun 28 2025
+sort buttons fixed
+<br>
+popup display fix & improved
+<br>
+when a user clicks on a place in the results list, the map centers on the selected location and opens a marker popup showing detailed info properly.
+<br>
+map drag feature added
+<br> 
+**Issue**
+Searching "San Francisco" + "bridge" keyword, shows the correct Golden Gate Bridge photo.
+But with "San Francisco" + "tourist attractions" keyword, the Golden Gate Bridge result shows a wrong photo (Taj Mahal).
+This is due to the Google Places API photo data

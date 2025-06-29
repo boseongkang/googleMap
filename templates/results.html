@@ -1,147 +1,313 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Results for '{{ keyword }}'</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <style>
-    body, html { margin:0; padding:0; }
-    .main-flex { display: flex; height: 85vh; }
-    #map { flex: 2; min-width: 350px; height: 100%; }
-    #side-panel { flex: 1; min-width: 350px; max-width: 500px; overflow-y: auto; background: #fafafa; border-left: 1px solid #eee; }
-    .sort-controls { margin: 16px; display: flex; gap: 10px; justify-content: flex-end; }
-    .sort-controls button { padding: 8px 12px; border: 1px solid #4285F4; background: #fff; color: #4285F4; border-radius: 4px; cursor: pointer; }
-    .sort-controls button.active, .sort-controls button:hover { background: #4285F4; color: #fff; }
-    #places-list { list-style: none; padding: 0; margin: 0; }
-    #places-list li { padding: 12px; border-bottom: 1px solid #ddd; cursor: pointer; }
-    .place-info strong { font-size: 1.05em; }
-    .search-container { padding: 18px; display: flex; justify-content: center; background: #fff; }
-    .search-box { display: flex; gap: 10px; }
-    .search-box input { padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; }
-    .search-box button { padding: 8px 16px; font-size: 14px; background: #4285F4; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-    .search-box button:hover { background: #357ae8; }
-  </style>
+    <meta charset="UTF-8">
+    <title>Results for '{{ keyword }}'</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+        }
+        .main-flex {
+            display: flex;
+            height: 85vh;
+        }
+        #map {
+            flex: 2;
+            min-width: 350px;
+            height: 100%;
+        }
+        #side-panel {
+            flex: 1;
+            min-width: 350px;
+            max-width: 500px;
+            overflow-y: auto;
+            background: #fafafa;
+            border-left: 1px solid #eee;
+        }
+        .sort-controls {
+            margin: 16px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .sort-controls button {
+            padding: 8px 12px;
+            border: 1px solid #4285F4;
+            background: #fff;
+            color: #4285F4;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .sort-controls button.active, .sort-controls button:hover {
+            background: #4285F4;
+            color: #fff;
+        }
+        #places-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #places-list li {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .place-info strong {
+            font-size: 1.05em;
+        }
+        .search-container {
+            padding: 18px;
+            display: flex;
+            justify-content: center;
+            background: #fff;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+        .search-box input {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-box button {
+            padding: 8px 16px;
+            font-size: 14px;
+            background: #4285F4;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-box button:hover {
+            background: #357ae8;
+        }
+    </style>
 </head>
 <body>
 <div class="search-container">
-  <form class="search-box" action="/results" method="get">
-    <input id="location-input" name="location" type="text" value="{{ location_text }}" required>
-    <input id="keyword-input" name="keyword" type="text" value="{{ keyword }}" required>
-    <button type="submit">Search</button>
-  </form>
+    <form class="search-box" action="/results" method="get">
+        <input id="location-input" name="location" type="text" value="{{ location_text }}" required>
+        <input id="keyword-input" name="keyword" type="text" value="{{ keyword }}" required>
+        <button type="submit">Search</button>
+    </form>
 </div>
 
 <div class="main-flex">
-  <div id="map"></div>
-  <div id="side-panel">
-    <div class="sort-controls">
-      <button onclick="sortBy('reviews')">Sort by Reviews</button>
-      <button onclick="sortBy('rating')">Sort by Rating</button>
-    </div>
-    <ul id="places-list">
-      {% for p in places %}
-      <li data-idx="{{ loop.index0 }}" onclick="openMarker({{ loop.index0 }})">
-        <div class="place-info">
-          <strong>{{ loop.index }}. {{ p.name }}</strong><br>
-          <small>Rating: {{ p.rating or 'N/A' }} ({{ p.user_ratings_total or 0 }} reviews)</small><br>
-          <small>{{ p.vicinity }}</small>
+    <div id="map"></div>
+    <div id="side-panel">
+        <div class="sort-controls">
+            <button id="sortReviewsBtn">Sort by Reviews</button>
+            <button id="sortRatingBtn">Sort by Rating</button>
         </div>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
+        <ul id="places-list">
+            {% for p in places %}
+            <li data-original-idx="{{ loop.index0 }}" onclick="openMarker({{ loop.index0 }})">
+                <div class="place-info">
+                    <strong>{{ loop.index }}. {{ p.name }}</strong><br>
+                    <small>Rating: {{ p.rating or 'N/A' }} ({{ p.user_ratings_total or 0 }} reviews)</small><br>
+                    <small>{{ p.vicinity }}</small>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
 
-<script src="https://maps.googleapis.com/maps/api/js?key={{ browser_key }}&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ browser_key }}&libraries=places&language=en"></script>
 <script>
-  let map, markers = [], infoWindow = null, openedIdx = null;
-  window.placesAll = {{ places|tojson }};
+    let map, markers = [], infoWindow = null, openedIdx = null;
 
-  function initMap() {
-    const center = {{ center_json|safe }};
-    map = new google.maps.Map(document.getElementById('map'), { center, zoom: 13 });
-    addMarkers(window.placesAll);
-    map.addListener("click", () => { if(infoWindow) infoWindow.close(); openedIdx = null; });
-  }
+    window.placesAll = {{ places | tojson }};
+    let currentPlaces = [...window.placesAll];  // 정렬해서 보여줄 현재 배열
 
-  function addMarkers(places) {
-    markers.forEach(m => m.setMap(null));
-    markers = [];
+    const center = {{ center_json | safe }};
 
-    places.forEach((p, i) => {
-      if (!p.geometry) return;
-      const marker = new google.maps.Marker({
-        position: p.geometry.location,
-        map,
-        label: { text: `${i+1}`, color: "#fff", fontSize: "14px", fontWeight: "bold" },
-        title: p.name
-      });
-      marker.addListener('click', () => {
-        openInfoWindow(p, marker, i);
-        map.panTo(marker.getPosition());
-        openedIdx = i;
-      });
-      markers.push(marker);
-    });
-  }
+    let preventIdleSearch = false;
 
-  function openMarker(idx) {
-    const marker = markers[idx];
-    if (openedIdx === idx && infoWindow) {
-      infoWindow.close();
-      openedIdx = null;
-    } else {
-      openInfoWindow(window.placesAll[idx], marker, idx);
-      if(openedIdx !== idx){
-        map.panTo(marker.getPosition());
-      }
-      openedIdx = idx;
+    function createMarkerIcon(number, isHighlight=false) {
+        const size = isHighlight ? 40 : 30;
+        const fontSize = isHighlight ? 16 : 12;
+        const fillColor = isHighlight ? '#FF5722' : '#4285F4';
+        const strokeColor = '#fff';
+
+        const svg = `
+        <svg width="${size}" height="${size}" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18" fill="${fillColor}" stroke="${strokeColor}" stroke-width="3"/>
+          <text x="20" y="26" font-family="Arial" font-size="${fontSize}" fill="#fff" font-weight="bold" text-anchor="middle">${number}</text>
+        </svg>`;
+
+        return {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+            scaledSize: new google.maps.Size(size, size),
+            anchor: new google.maps.Point(size/2, size/2)
+        };
     }
-  }
 
-  function openInfoWindow(p, marker, idx) {
-    if (infoWindow) infoWindow.close();
-    const imgTag = p.photos?.length
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), { center, zoom: 13 });
+        addMarkers(currentPlaces);
+        map.addListener("click", () => {
+            if (infoWindow) infoWindow.close();
+            openedIdx = null;
+        });
+
+        map.addListener('idle', () => {
+            if (preventIdleSearch) return;
+
+            const center = map.getCenter();
+            const lat = center.lat();
+            const lng = center.lng();
+            const keywordInput = document.getElementById('keyword-input');
+            const keyword = keywordInput ? keywordInput.value : '';
+
+            fetch('/map_search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat, lng, keyword })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.places) {
+                    window.placesAll = data.places;
+                    currentPlaces = [...window.placesAll];
+                    renderList(currentPlaces);
+                    addMarkers(currentPlaces);
+                    if (infoWindow) infoWindow.close();
+                    openedIdx = null;
+
+                    document.getElementById('sortReviewsBtn').classList.remove('active');
+                    document.getElementById('sortRatingBtn').classList.remove('active');
+                }
+            })
+            .catch(err => console.error('Error fetching places:', err));
+        });
+    }
+
+    function addMarkers(places) {
+        markers.forEach(m => m.setMap(null));
+        markers = [];
+
+        places.forEach((p, i) => {
+            if (!p.geometry) return;
+            const marker = new google.maps.Marker({
+                position: p.geometry.location,
+                map,
+                icon: createMarkerIcon(i + 1),
+                title: p.name
+            });
+            marker.addListener('click', () => {
+                openInfoWindow(p, marker, i);
+                preventIdleSearch = true;
+                map.panTo(marker.getPosition());
+                setTimeout(() => { preventIdleSearch = false; }, 500);
+                openedIdx = i;
+            });
+            markers.push(marker);
+        });
+
+        renderList(places);
+    }
+
+    function openMarker(idx) {
+        const marker = markers[idx];
+        if (openedIdx === idx && infoWindow) {
+            infoWindow.close();
+            openedIdx = null;
+        } else {
+            openInfoWindow(currentPlaces[idx], marker, idx);
+            preventIdleSearch = true;
+            map.panTo(marker.getPosition());
+            setTimeout(() => { preventIdleSearch = false; }, 500);
+            openedIdx = idx;
+        }
+    }
+
+    function openInfoWindow(p, marker, idx) {
+        if (infoWindow) infoWindow.close();
+        const imgTag = p.photos?.length
             ? `<img src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=640&photoreference=${p.photos[0].photo_reference}&key={{ browser_key }}" style="width:350px;height:200px;object-fit:cover;border-radius:8px;margin-bottom:8px;">`
             : '';
-    infoWindow = new google.maps.InfoWindow({
-      content: `
-      <div style="max-width:400px;">
-        ${imgTag}
-        <strong>${p.name}</strong><br>
-        Rating: ${p.rating || 'N/A'} (${p.user_ratings_total || 0} reviews)<br>
-        <small>${p.vicinity || ''}</small>
-      </div>`,
-      disableAutoPan: true
-    });
-    infoWindow.open(map, marker);
-  }
-
-  function sortBy(key) {
-    const ul = document.getElementById('places-list');
-    const sortedItems = Array.from(ul.children).sort((a,b) => (
-            (parseFloat(b.dataset[key]) || 0) - (parseFloat(a.dataset[key]) || 0)
-    ));
-
-    sortedItems.forEach((item, idx) => {
-      ul.appendChild(item);
-      item.querySelector('.place-info strong').innerHTML = `${idx+1}. ${item.querySelector('.place-info strong').innerHTML.replace(/^\d+\.\s*/, '')}`;
-    });
-
-    window.placesAll = sortedItems.map(item => window.placesAll[item.dataset.idx]);
-    addMarkers(window.placesAll);
-    openedIdx = null;
-  }
-
-  function attachAutocomplete() {
-    const input = document.getElementById('location-input');
-    if (!input.getAttribute('data-autocomplete')) {
-      new google.maps.places.Autocomplete(input, { types: ['(cities)'] });
-      input.setAttribute('data-autocomplete', 'true');
+        infoWindow = new google.maps.InfoWindow({
+            content: `
+<div style="max-width:400px;">
+    ${imgTag}<br/>
+    <strong style="display:block; margin-top:8px;">${p.name}</strong>
+    <div>Rating: ${p.rating || 'N/A'} (${p.user_ratings_total || 0} reviews)</div>
+    <div><small>${p.vicinity || ''}</small></div>
+  </div>`,
+            disableAutoPan: true
+        });
+        infoWindow.open(map, marker);
     }
-  }
 
-  window.onload = () => { attachAutocomplete(); initMap(); };
+    function renderList(places) {
+        const ul = document.getElementById('places-list');
+        ul.innerHTML = '';
+        places.forEach((p, i) => {
+            const li = document.createElement('li');
+            li.dataset.idx = i;
+            li.onclick = () => openMarker(i);
+
+            li.onmouseenter = () => {
+                markers.forEach((m, idx) => {
+                    m.setIcon(createMarkerIcon(idx + 1, idx === i));
+                });
+            };
+            li.onmouseleave = () => {
+                markers.forEach((m, idx) => {
+                    m.setIcon(createMarkerIcon(idx + 1, false));
+                });
+            };
+
+            li.innerHTML = `
+                <div class="place-info">
+                    <strong>${i + 1}. ${p.name}</strong><br>
+                    <small>Rating: ${p.rating || 'N/A'} (${p.user_ratings_total || 0} reviews)</small><br>
+                    <small>${p.vicinity || ''}</small>
+                </div>
+            `;
+            ul.appendChild(li);
+        });
+    }
+
+    function sortBy(key) {
+        const getValue = (p) => {
+            if (key === 'reviews') return p.user_ratings_total || 0;
+            if (key === 'rating') return p.rating || 0;
+            return 0;
+        };
+        currentPlaces = [...currentPlaces].sort((a, b) => getValue(b) - getValue(a));
+        renderList(currentPlaces);
+        addMarkers(currentPlaces);
+
+        if (infoWindow) infoWindow.close();
+        openedIdx = null;
+
+        document.getElementById('sortReviewsBtn').classList.toggle('active', key === 'reviews');
+        document.getElementById('sortRatingBtn').classList.toggle('active', key === 'rating');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('sortReviewsBtn').addEventListener('click', () => sortBy('reviews'));
+        document.getElementById('sortRatingBtn').addEventListener('click', () => sortBy('rating'));
+    });
+
+    function attachAutocomplete() {
+        const input = document.getElementById('location-input');
+        if (!input.getAttribute('data-autocomplete')) {
+            new google.maps.places.Autocomplete(input, {types: ['(cities)']});
+            input.setAttribute('data-autocomplete', 'true');
+        }
+    }
+
+    window.onload = () => {
+        attachAutocomplete();
+        initMap();
+    };
 </script>
 </body>
 </html>

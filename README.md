@@ -50,3 +50,7 @@ This is due to the Google Places API photo data
 
 
 <img width="1783" alt="Image" src="https://github.com/user-attachments/assets/a9c80323-cc03-4073-ab64-c8066c57733b" />
+
+<br>
+## Jul 1 2025
+Google Cloud MySQL is not free so if i want to collect user's search data, it should be added at very last moment

@@ -51,7 +51,6 @@ This is due to the Google Places API photo data
 <br>
 
 ## Jun 29 2025
-<br>
 using Google Cloud, successfully uploaded Jun 29 2025
 <br>
 tried to upload using Docker but failed.

@@ -1,7 +1,4 @@
 # googleMap
-using Google Cloud, successfully uploaded Jun 29 2025
-<br>
-tried to upload using Docker but failed.
 <br>
 git clone repository -> 'pip install flask' -> 'pip install requests' -> 'pip install dotenv' -> 'python app.py runserver'
 
@@ -51,6 +48,13 @@ This is due to the Google Places API photo data
 
 <img width="1783" alt="Image" src="https://github.com/user-attachments/assets/a9c80323-cc03-4073-ab64-c8066c57733b" />
 
+<br>
+
+## Jun 29 2025
+<br>
+using Google Cloud, successfully uploaded Jun 29 2025
+<br>
+tried to upload using Docker but failed.
 <br>
 
 ## Jul 1 2025

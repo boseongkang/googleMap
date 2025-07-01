@@ -10,7 +10,7 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 
 GOOGLE_BROWSER_KEY = os.getenv("GOOGLE_BROWSER_KEY")
 GOOGLE_SERVER_KEY = os.getenv("GOOGLE_SERVER_KEY")
-
+GOOGLE_PHOTO_KEY = os.getenv("GOOGLE_PHOTO_KEY")
 
 @app.route('/')
 def home():
@@ -47,8 +47,9 @@ def results():
                            location_text=location,
                            keyword=keyword,
                            places=places,
-                           browser_key=GOOGLE_BROWSER_KEY
-                           )
+                           browser_key=GOOGLE_BROWSER_KEY,
+                           photo_api_key=GOOGLE_PHOTO_KEY)
+
 
 @app.route('/map_search', methods=['POST'])
 def map_search():

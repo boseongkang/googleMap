@@ -5,19 +5,9 @@
     <title>Results for '{{ keyword }}'</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-        }
-        .main-flex {
-            display: flex;
-            height: 85vh;
-        }
-        #map {
-            flex: 2;
-            min-width: 350px;
-            height: 100%;
-        }
+        body, html { margin: 0; padding: 0; }
+        .main-flex { display: flex; height: 85vh; }
+        #map { flex: 2; min-width: 350px; height: 100%; }
         #side-panel {
             flex: 1;
             min-width: 350px;
@@ -44,29 +34,45 @@
             background: #4285F4;
             color: #fff;
         }
-        #places-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .myroute-btn {
+            margin-left: 12px;
+            background: #34a853;
+            color: #fff;
+            border: 1px solid #34a853;
         }
-        #places-list li {
+        .myroute-btn:hover {
+            background: #28753b;
+            border: 1px solid #28753b;
+        }
+        #places-list, #myroute-list { list-style: none; padding: 0; margin: 0; }
+        #places-list li, #myroute-list li {
             padding: 12px;
             border-bottom: 1px solid #ddd;
             cursor: pointer;
+            background: #fff;
+            position: relative;
+            min-height: 68px;
+            transition: box-shadow 0.16s;
         }
-        .place-info strong {
-            font-size: 1.05em;
+        #myroute-list li {
+            cursor: grab;
         }
+        #myroute-list li.dragging {
+            opacity: 0.4;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.17);
+        }
+        #myroute-list li.dragover {
+            border: 2px dashed #4285F4;
+            background: #f1f8ff;
+        }
+        .place-info strong { font-size: 1.05em; }
         .search-container {
             padding: 18px;
             display: flex;
             justify-content: center;
             background: #fff;
         }
-        .search-box {
-            display: flex;
-            gap: 10px;
-        }
+        .search-box { display: flex; gap: 10px; }
         .search-box input {
             padding: 8px 12px;
             font-size: 14px;
@@ -82,8 +88,35 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        .search-box button:hover {
-            background: #357ae8;
+        .search-box button:hover { background: #357ae8; }
+        .added-btn {
+            background: #4CAF50 !important;
+            color: #fff !important;
+            border: none !important;
+            padding: 5px 14px !important;
+            border-radius: 5px !important;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: default;
+        }
+        .added-btn svg { vertical-align: middle; }
+        .drag-handle {
+            position: absolute;
+            right: 10px; top: 13px;
+            font-size: 20px;
+            cursor: grab;
+            color: #888;
+            opacity: 0.6;
+            z-index: 3;
+            transition: color 0.2s, opacity 0.2s;
+        }
+        #myroute-list li:hover .drag-handle { color: #222; opacity: 1; }
+        .empty-tip {
+            text-align: center;
+            padding: 32px 0 0 0;
+            color: #aaa;
         }
     </style>
 </head>
@@ -102,44 +135,85 @@
         <div class="sort-controls">
             <button id="sortReviewsBtn">Sort by Reviews</button>
             <button id="sortRatingBtn">Sort by Rating</button>
+            <button id="buildRouteBtn" class="myroute-btn">Build My Route</button>
         </div>
-        <ul id="places-list">
-            {% for p in places %}
-            <li data-original-idx="{{ loop.index0 }}" onclick="openMarker({{ loop.index0 }})">
-                <div class="place-info">
-                    <strong>{{ loop.index }}. {{ p.name }}</strong><br>
-                    <small>Rating: {{ p.rating or 'N/A' }} ({{ p.user_ratings_total or 0 }} reviews)</small><br>
-                    <small>{{ p.vicinity }}</small>
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
+        <ul id="places-list"></ul>
+        <ul id="myroute-list" style="display:none;"></ul>
     </div>
 </div>
 
 <script src="https://maps.googleapis.com/maps/api/js?key={{ browser_key }}&libraries=places&language=en"></script>
 <script>
-    let map, markers = [], infoWindow = null, openedIdx = null;
-
+    let map, markers = [], infoWindow = null, openedIdx = null, routePolyline = null;
     window.placesAll = {{ places | tojson }};
-    let currentPlaces = [...window.placesAll];  // 정렬해서 보여줄 현재 배열
-
+    let currentPlaces = [...window.placesAll];
     const center = {{ center_json | safe }};
-
     let preventIdleSearch = false;
+    let showingMyRoute = false;
+    let myList = [];
+    const photoApiKey = "{{ photo_api_key }}";
+
+    function getIsAdded(place) {
+        return myList.some(x => x.place_id === place.place_id);
+    }
+
+    function openInfoWindow(p, marker, idx) {
+        if (infoWindow) infoWindow.close();
+        const isAdded = getIsAdded(p);
+        const addBtn = isAdded
+            ? `<button class="added-btn" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M20.292 7.293a1 1 0 0 1 0 1.414l-8.5 8.5a1 1 0 0 1-1.415 0l-4.5-4.5a1 1 0 1 1 1.415-1.414l3.793 3.793 7.793-7.793a1 1 0 0 1 1.414 0Z"/></svg>Added
+            </button>`
+            : `<button id="addBtn_${p.place_id}" onclick="addToMyList('${p.place_id}', event)" style="background:#34a853;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;">Add to My List</button>`;
+        const imgTag = p.photos?.length
+            ? `<img src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=640&photoreference=${p.photos[0].photo_reference}&key=${photoApiKey}" style="width:350px;height:200px;object-fit:cover;border-radius:8px;margin-bottom:8px;">`
+            : '';
+        infoWindow = new google.maps.InfoWindow({
+            content: `
+<div style="max-width:400px;">
+    ${imgTag}<br/>
+    <strong style="display:block; margin-top:8px;">${p.name}</strong>
+    <div>Rating: ${p.rating || 'N/A'} (${p.user_ratings_total || 0} reviews)</div>
+    <div><small>${p.vicinity || ''}</small></div>
+    <div style="margin-top:10px;">${addBtn}</div>
+  </div>`,
+            disableAutoPan: true
+        });
+        infoWindow.open(map, marker);
+
+        setTimeout(() => {
+            const btn = document.getElementById("addBtn_" + p.place_id);
+            if (btn) {
+                btn.onclick = (event) => addToMyList(p.place_id, event, marker, p, idx);
+            }
+        }, 0);
+    }
+    window.addToMyList = function(place_id, event, marker, place, idx) {
+        if (event) event.stopPropagation();
+        const targetPlace = place || currentPlaces.find(p => p.place_id === place_id);
+        if (targetPlace && !myList.find(x => x.place_id === place_id)) {
+            myList.push(targetPlace);
+            const btn = document.getElementById("addBtn_" + place_id);
+            if(btn){
+                btn.outerHTML = `
+                <button class="added-btn" disabled>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M20.292 7.293a1 1 0 0 1 0 1.414l-8.5 8.5a1 1 0 0 1-1.415 0l-4.5-4.5a1 1 0 1 1 1.415-1.414l3.793 3.793 7.793-7.793a1 1 0 0 1 1.414 0Z"/></svg>Added
+                </button>`;
+            }
+        }
+        renderMyListIfNeeded();
+    }
 
     function createMarkerIcon(number, isHighlight=false) {
         const size = isHighlight ? 40 : 30;
         const fontSize = isHighlight ? 16 : 12;
         const fillColor = isHighlight ? '#FF5722' : '#4285F4';
         const strokeColor = '#fff';
-
         const svg = `
         <svg width="${size}" height="${size}" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
           <circle cx="20" cy="20" r="18" fill="${fillColor}" stroke="${strokeColor}" stroke-width="3"/>
           <text x="20" y="26" font-family="Arial" font-size="${fontSize}" fill="#fff" font-weight="bold" text-anchor="middle">${number}</text>
         </svg>`;
-
         return {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
             scaledSize: new google.maps.Size(size, size),
@@ -154,16 +228,13 @@
             if (infoWindow) infoWindow.close();
             openedIdx = null;
         });
-
         map.addListener('idle', () => {
-            if (preventIdleSearch) return;
-
+            if (preventIdleSearch || showingMyRoute) return;
             const center = map.getCenter();
             const lat = center.lat();
             const lng = center.lng();
             const keywordInput = document.getElementById('keyword-input');
             const keyword = keywordInput ? keywordInput.value : '';
-
             fetch('/map_search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -178,7 +249,7 @@
                     addMarkers(currentPlaces);
                     if (infoWindow) infoWindow.close();
                     openedIdx = null;
-
+                    showingMyRoute = false;
                     document.getElementById('sortReviewsBtn').classList.remove('active');
                     document.getElementById('sortRatingBtn').classList.remove('active');
                 }
@@ -188,9 +259,9 @@
     }
 
     function addMarkers(places) {
+        if(routePolyline) {routePolyline.setMap(null);}
         markers.forEach(m => m.setMap(null));
         markers = [];
-
         places.forEach((p, i) => {
             if (!p.geometry) return;
             const marker = new google.maps.Marker({
@@ -208,11 +279,10 @@
             });
             markers.push(marker);
         });
-
         renderList(places);
     }
 
-    function openMarker(idx) {
+    window.openMarker = function(idx) {
         const marker = markers[idx];
         if (openedIdx === idx && infoWindow) {
             infoWindow.close();
@@ -226,32 +296,13 @@
         }
     }
 
-    function openInfoWindow(p, marker, idx) {
-        if (infoWindow) infoWindow.close();
-        const imgTag = p.photos?.length
-            ? `<img src="https://maps.googleapis.com/maps/api/place/photo?maxwidth=640&photoreference=${p.photos[0].photo_reference}&key={{ browser_key }}" style="width:350px;height:200px;object-fit:cover;border-radius:8px;margin-bottom:8px;">`
-            : '';
-        infoWindow = new google.maps.InfoWindow({
-            content: `
-<div style="max-width:400px;">
-    ${imgTag}<br/>
-    <strong style="display:block; margin-top:8px;">${p.name}</strong>
-    <div>Rating: ${p.rating || 'N/A'} (${p.user_ratings_total || 0} reviews)</div>
-    <div><small>${p.vicinity || ''}</small></div>
-  </div>`,
-            disableAutoPan: true
-        });
-        infoWindow.open(map, marker);
-    }
-
     function renderList(places) {
         const ul = document.getElementById('places-list');
         ul.innerHTML = '';
         places.forEach((p, i) => {
             const li = document.createElement('li');
             li.dataset.idx = i;
-            li.onclick = () => openMarker(i);
-
+            li.onclick = () => window.openMarker(i);
             li.onmouseenter = () => {
                 markers.forEach((m, idx) => {
                     m.setIcon(createMarkerIcon(idx + 1, idx === i));
@@ -262,7 +313,6 @@
                     m.setIcon(createMarkerIcon(idx + 1, false));
                 });
             };
-
             li.innerHTML = `
                 <div class="place-info">
                     <strong>${i + 1}. ${p.name}</strong><br>
@@ -272,21 +322,101 @@
             `;
             ul.appendChild(li);
         });
+        ul.style.display = '';
+        document.getElementById('myroute-list').style.display = 'none';
+    }
+
+    function renderMyListIfNeeded() {
+        if (showingMyRoute) renderMyList();
+    }
+
+    function renderMyList() {
+        showingMyRoute = true;
+        addMarkers(myList);
+        const ul = document.getElementById('myroute-list');
+        ul.innerHTML = '';
+        myList.forEach((p, i) => {
+            const li = document.createElement('li');
+            li.setAttribute('draggable', true);
+            li.dataset.idx = i;
+            li.innerHTML = `
+                <div class="place-info" style="padding-right:32px;">
+                    <strong>${i + 1}. ${p.name}</strong><br>
+                    <small>Rating: ${p.rating || 'N/A'} (${p.user_ratings_total || 0} reviews)</small><br>
+                    <small>${p.vicinity || ''}</small>
+                </div>
+                <span class="drag-handle" title="Drag to reorder">&#8942;</span>
+            `;
+            // DnD events
+            li.ondragstart = (e) => {
+                li.classList.add('dragging');
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", i);
+            };
+            li.ondragend = () => {
+                li.classList.remove('dragging');
+                document.querySelectorAll('#myroute-list li').forEach(li=>li.classList.remove('dragover'));
+            };
+            li.ondragover = (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                li.classList.add('dragover');
+            };
+            li.ondragleave = () => {
+                li.classList.remove('dragover');
+            };
+            li.ondrop = (e) => {
+                e.preventDefault();
+                li.classList.remove('dragover');
+                const from = parseInt(e.dataTransfer.getData("text/plain"));
+                const to = i;
+                if (from === to) return;
+                const moved = myList.splice(from, 1)[0];
+                myList.splice(to, 0, moved);
+                renderMyList();
+            };
+            ul.appendChild(li);
+        });
+        ul.style.display = '';
+        document.getElementById('places-list').style.display = 'none';
+        drawPolylineForMyList();
+        if(myList.length===0){
+            ul.innerHTML = `<div class="empty-tip">Add places to build your own travel map</div>`;
+        }
+    }
+
+    function drawPolylineForMyList() {
+        if(routePolyline) routePolyline.setMap(null);
+        if (myList.length < 2) return;
+        const routePath = myList.map(p => {
+            const loc = p.geometry?.location;
+            return typeof loc.lat === 'function'
+                ? {lat: loc.lat(), lng: loc.lng()}
+                : loc;
+        });
+        routePolyline = new google.maps.Polyline({
+            path: routePath,
+            geodesic: true,
+            strokeColor: "#FF5722",
+            strokeOpacity: 0.9,
+            strokeWeight: 5
+        });
+        routePolyline.setMap(map);
+        if (routePath[0]) map.panTo(routePath[0]);
     }
 
     function sortBy(key) {
+        showingMyRoute = false;
+        currentPlaces = [...window.placesAll];
         const getValue = (p) => {
             if (key === 'reviews') return p.user_ratings_total || 0;
             if (key === 'rating') return p.rating || 0;
             return 0;
         };
         currentPlaces = [...currentPlaces].sort((a, b) => getValue(b) - getValue(a));
-        renderList(currentPlaces);
         addMarkers(currentPlaces);
-
         if (infoWindow) infoWindow.close();
         openedIdx = null;
-
         document.getElementById('sortReviewsBtn').classList.toggle('active', key === 'reviews');
         document.getElementById('sortRatingBtn').classList.toggle('active', key === 'rating');
     }
@@ -294,6 +424,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('sortReviewsBtn').addEventListener('click', () => sortBy('reviews'));
         document.getElementById('sortRatingBtn').addEventListener('click', () => sortBy('rating'));
+        document.getElementById('buildRouteBtn').addEventListener('click', renderMyList);
     });
 
     function attachAutocomplete() {

@@ -52,5 +52,15 @@ This is due to the Google Places API photo data
 <img width="1783" alt="Image" src="https://github.com/user-attachments/assets/a9c80323-cc03-4073-ab64-c8066c57733b" />
 
 <br>
+
 ## Jul 1 2025
 Google Cloud MySQL is not free so if i want to collect user's search data, it should be added at very last moment
+<br>
+issue with browser/server key -> generate new api key to seperate key
+<br>
+add 'build my route' function to make user's own travel map
+<br>
+add 'Add to My List' button to make user's own travel map 
+<br>
+add drag and drop function to edit the list of the route
+

@@ -66,3 +66,5 @@ add 'Add to My List' button to make user's own travel map
 <br>
 add drag and drop function to edit the list of the route
 
+**API**
+places api: Requests per minute limit 6000 -> 100 

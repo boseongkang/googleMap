@@ -66,5 +66,16 @@ add 'Add to My List' button to make user's own travel map
 <br>
 add drag and drop function to edit the list of the route
 
+<br>
+
+## Jul 4 2025
+add delete button to edit the route
+<br>
+button color and features looks same. when user put mouse pointer on the button, color changes (visual update)
+<br>
+Build My Route btn feature: delete, edit order
+<br> 
+ 
+
 **API**
 places api: Requests per minute limit 6000 -> 100 

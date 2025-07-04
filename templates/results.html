@@ -29,21 +29,17 @@
             color: #4285F4;
             border-radius: 4px;
             cursor: pointer;
+            transition: background 0.2s, color 0.2s;
         }
-        .sort-controls button.active, .sort-controls button:hover {
+        .sort-controls button.active,
+        .sort-controls button:active,
+        .sort-controls button:focus,
+        .sort-controls button:hover {
             background: #4285F4;
             color: #fff;
+            outline: none;
         }
-        .myroute-btn {
-            margin-left: 12px;
-            background: #34a853;
-            color: #fff;
-            border: 1px solid #34a853;
-        }
-        .myroute-btn:hover {
-            background: #28753b;
-            border: 1px solid #28753b;
-        }
+
         #places-list, #myroute-list { list-style: none; padding: 0; margin: 0; }
         #places-list li, #myroute-list li {
             padding: 12px;
@@ -51,7 +47,7 @@
             cursor: pointer;
             background: #fff;
             position: relative;
-            min-height: 68px;
+            min-height: 48px;
             transition: box-shadow 0.16s;
         }
         #myroute-list li {
@@ -63,7 +59,7 @@
         }
         #myroute-list li.dragover {
             border: 2px dashed #4285F4;
-            background: #f1f8ff;
+            background: #fff;
         }
         .place-info strong { font-size: 1.05em; }
         .search-container {
@@ -104,7 +100,7 @@
         .added-btn svg { vertical-align: middle; }
         .drag-handle {
             position: absolute;
-            right: 10px; top: 13px;
+            right: 34px; top: 13px;
             font-size: 20px;
             cursor: grab;
             color: #888;
@@ -118,6 +114,18 @@
             padding: 32px 0 0 0;
             color: #aaa;
         }
+        .delete-btn {
+            position: absolute;
+            right: 6px;
+            top: 12px;
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.3em;
+            cursor: pointer;
+            z-index: 5;
+        }
+        .delete-btn:hover svg path { fill: #e74c3c; }
     </style>
 </head>
 <body>
@@ -128,20 +136,18 @@
         <button type="submit">Search</button>
     </form>
 </div>
-
 <div class="main-flex">
     <div id="map"></div>
     <div id="side-panel">
         <div class="sort-controls">
             <button id="sortReviewsBtn">Sort by Reviews</button>
             <button id="sortRatingBtn">Sort by Rating</button>
-            <button id="buildRouteBtn" class="myroute-btn">Build My Route</button>
+            <button id="buildRouteBtn">Build My Route</button>
         </div>
         <ul id="places-list"></ul>
         <ul id="myroute-list" style="display:none;"></ul>
     </div>
 </div>
-
 <script src="https://maps.googleapis.com/maps/api/js?key={{ browser_key }}&libraries=places&language=en"></script>
 <script>
     let map, markers = [], infoWindow = null, openedIdx = null, routePolyline = null;
@@ -240,21 +246,20 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ lat, lng, keyword })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.places) {
-                    window.placesAll = data.places;
-                    currentPlaces = [...window.placesAll];
-                    renderList(currentPlaces);
-                    addMarkers(currentPlaces);
-                    if (infoWindow) infoWindow.close();
-                    openedIdx = null;
-                    showingMyRoute = false;
-                    document.getElementById('sortReviewsBtn').classList.remove('active');
-                    document.getElementById('sortRatingBtn').classList.remove('active');
-                }
-            })
-            .catch(err => console.error('Error fetching places:', err));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.places) {
+                        window.placesAll = data.places;
+                        currentPlaces = [...window.placesAll];
+                        renderList(currentPlaces);
+                        addMarkers(currentPlaces);
+                        if (infoWindow) infoWindow.close();
+                        openedIdx = null;
+                        showingMyRoute = false;
+                        setActiveButton(null);
+                    }
+                })
+                .catch(err => console.error('Error fetching places:', err));
         });
     }
 
@@ -296,6 +301,13 @@
         }
     }
 
+    function setActiveButton(btn) {
+        document.getElementById('sortReviewsBtn').classList.remove('active');
+        document.getElementById('sortRatingBtn').classList.remove('active');
+        document.getElementById('buildRouteBtn').classList.remove('active');
+        if (btn) btn.classList.add('active');
+    }
+
     function renderList(places) {
         const ul = document.getElementById('places-list');
         ul.innerHTML = '';
@@ -324,14 +336,12 @@
         });
         ul.style.display = '';
         document.getElementById('myroute-list').style.display = 'none';
-    }
-
-    function renderMyListIfNeeded() {
-        if (showingMyRoute) renderMyList();
+        setActiveButton(null);
     }
 
     function renderMyList() {
         showingMyRoute = true;
+        setActiveButton(document.getElementById('buildRouteBtn'));
         addMarkers(myList);
         const ul = document.getElementById('myroute-list');
         ul.innerHTML = '';
@@ -340,14 +350,16 @@
             li.setAttribute('draggable', true);
             li.dataset.idx = i;
             li.innerHTML = `
-                <div class="place-info" style="padding-right:32px;">
+                <div class="place-info" style="padding-right:60px;">
                     <strong>${i + 1}. ${p.name}</strong><br>
                     <small>Rating: ${p.rating || 'N/A'} (${p.user_ratings_total || 0} reviews)</small><br>
                     <small>${p.vicinity || ''}</small>
                 </div>
                 <span class="drag-handle" title="Drag to reorder">&#8942;</span>
+                <button class="delete-btn" title="Remove from Route" onclick="deleteFromRoute(${i}, event)">
+                    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#888" d="M7 19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7H7v12Zm9-14V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1H3v2h18V5h-5Zm-2 1h-4V4h4v2Z"/></svg>
+                </button>
             `;
-            // DnD events
             li.ondragstart = (e) => {
                 li.classList.add('dragging');
                 e.dataTransfer.effectAllowed = "move";
@@ -385,6 +397,16 @@
         }
     }
 
+    window.deleteFromRoute = function(idx, event) {
+        event.stopPropagation();
+        myList.splice(idx, 1);
+        renderMyList();
+    }
+
+    function renderMyListIfNeeded() {
+        if (showingMyRoute) renderMyList();
+    }
+
     function drawPolylineForMyList() {
         if(routePolyline) routePolyline.setMap(null);
         if (myList.length < 2) return;
@@ -417,8 +439,7 @@
         addMarkers(currentPlaces);
         if (infoWindow) infoWindow.close();
         openedIdx = null;
-        document.getElementById('sortReviewsBtn').classList.toggle('active', key === 'reviews');
-        document.getElementById('sortRatingBtn').classList.toggle('active', key === 'rating');
+        setActiveButton(key === 'reviews' ? document.getElementById('sortReviewsBtn') : document.getElementById('sortRatingBtn'));
     }
 
     document.addEventListener('DOMContentLoaded', () => {

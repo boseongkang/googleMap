@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Results for '{{ keyword }}'</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
     <style>
         body, html { margin: 0; padding: 0; }
         .main-flex { display: flex; height: 85vh; }
@@ -100,7 +101,7 @@
         .added-btn svg { vertical-align: middle; }
         .drag-handle {
             position: absolute;
-            right: 34px; top: 13px;
+            right: 40px; top: 13px;
             font-size: 20px;
             cursor: grab;
             color: #888;
@@ -121,10 +122,25 @@
             background: none;
             border: none;
             color: #888;
-            font-size: 1.3em;
+            font-size: 12px;
             cursor: pointer;
             z-index: 5;
         }
+        .material-symbols-outlined {
+            font-variation-settings:
+                    'FILL' 0,
+                    'wght' 400,
+                    'GRAD' 0,
+                    'opsz' 24;
+            font-size: 22px;
+            vertical-align: middle;
+            color: #888;
+            transition: color 0.15s;
+        }
+.delete-btn:hover .material-symbols-outlined {
+  color: #e74c3c;
+}
+
         .delete-btn:hover svg path { fill: #e74c3c; }
     </style>
 </head>
@@ -357,7 +373,7 @@
                 </div>
                 <span class="drag-handle" title="Drag to reorder">&#8942;</span>
                 <button class="delete-btn" title="Remove from Route" onclick="deleteFromRoute(${i}, event)">
-                    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#888" d="M7 19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7H7v12Zm9-14V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1H3v2h18V5h-5Zm-2 1h-4V4h4v2Z"/></svg>
+                    <span class="material-symbols-outlined">delete</span>
                 </button>
             `;
             li.ondragstart = (e) => {

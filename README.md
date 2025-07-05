@@ -1,4 +1,6 @@
 # googleMap
+<hr>
+url link: https://googlemap-390650509152.us-west1.run.app/
 <br>
 git clone repository -> 'pip install flask' -> 'pip install requests' -> 'pip install dotenv' -> 'python app.py runserver'
 
@@ -76,6 +78,10 @@ button color and features looks same. when user put mouse pointer on the button,
 Build My Route btn feature: delete, edit order
 <br> 
  
+## Jul 5 2025
+edit remove img
+<br>
+
 
 **API**
 places api: Requests per minute limit 6000 -> 100 
